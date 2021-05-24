@@ -124,23 +124,9 @@ func (c *ExtendedClient) RequestCertificateListPublicKey() ([]byte, error) {
 }
 
 func (c *ExtendedClient) getWithCertPinning(url string) ([]byte, error) {
-	// get TLS certificate fingerprint for host
-	u, err := urlpkg.Parse(url)
+	client, err := c.getClientWithCertPinning(url)
 	if err != nil {
 		return nil, err
-	}
-	tlsCertFingerprint, exists := c.ServerTLSCertFingerprints[u.Host]
-	if !exists {
-		return nil, fmt.Errorf("missing TLS certificate fingerprint for host %s", u.Host)
-	}
-
-	// set up TLS certificate verification
-	client := &http.Client{}
-	client.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			//VerifyPeerCertificate: NewPeerCertificateVerifier(tlsCertFingerprint),
-			VerifyConnection: NewConnectionVerifier(tlsCertFingerprint),
-		},
 	}
 
 	// make request
@@ -161,6 +147,28 @@ func (c *ExtendedClient) getWithCertPinning(url string) ([]byte, error) {
 	}
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+func (c *ExtendedClient) getClientWithCertPinning(url string) (*http.Client, error) {
+	// get TLS certificate fingerprint for host
+	u, err := urlpkg.Parse(url)
+	if err != nil {
+		return nil, err
+	}
+	tlsCertFingerprint, exists := c.ServerTLSCertFingerprints[u.Host]
+	if !exists {
+		return nil, fmt.Errorf("missing TLS certificate fingerprint for host %s", u.Host)
+	}
+
+	// set up TLS certificate verification
+	client := &http.Client{}
+	client.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			//VerifyPeerCertificate: NewPeerCertificateVerifier(tlsCertFingerprint),
+			VerifyConnection: NewConnectionVerifier(tlsCertFingerprint),
+		},
+	}
+	return client, nil
 }
 
 //// VerifyPeerCertificate is called after normal certificate verification by either a TLS client or server. It receives
