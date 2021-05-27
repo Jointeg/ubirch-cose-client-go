@@ -74,35 +74,9 @@ func NewProtocol(ctxManager ContextManager, secret []byte, client *ExtendedClien
 			interval = time.Hour
 		}
 
-		err := p.loadSKIDs()
-		if err != nil {
-			log.Error(err)
-			p.certLoadFailCounter++
-		}
-
+		p.loadSKIDs()
 		for range time.Tick(interval) {
-			err := p.loadSKIDs()
-			if err != nil {
-				log.Error(err)
-
-				p.certLoadFailCounter++
-				log.Debugf("loading certificate list failed %d times,"+
-					" clearing local KID lookup after %d failed attempts",
-					p.certLoadFailCounter, MaxCertLoadFail)
-
-				// if we have reached the maximum amount of failed attempts to load the certificate list,
-				// clear the SKID lookup
-				if p.certLoadFailCounter == MaxCertLoadFail {
-					p.skidStoreMutex.Lock()
-					p.skidStore = make(map[uuid.UUID][]byte)
-					p.skidStoreMutex.Unlock()
-
-					log.Warnf("cleared local KID lookup after %d failed attempts to load public key certificate list", MaxCertLoadFail)
-				}
-			} else {
-				// reset fail counter if certs were loaded successfully
-				p.certLoadFailCounter = 0
-			}
+			p.loadSKIDs()
 		}
 	}()
 
@@ -260,10 +234,29 @@ func (p *Protocol) GetSKID(uid uuid.UUID) ([]byte, error) {
 	return skid, nil
 }
 
-func (p *Protocol) loadSKIDs() error {
+func (p *Protocol) loadSKIDs() {
 	certs, err := p.RequestCertificateList(p.Verify)
 	if err != nil {
-		return err
+		log.Error(err)
+
+		p.certLoadFailCounter++
+		log.Debugf("loading certificate list failed %d times,"+
+			" clearing local KID lookup after %d failed attempts",
+			p.certLoadFailCounter, MaxCertLoadFail)
+
+		// if we have not yet reached the maximum amount of failed attempts to load the certificate list,
+		// return and try again later
+		if p.certLoadFailCounter != MaxCertLoadFail {
+			return
+		}
+
+		// if we have reached the maximum amount of failed attempts to load the certificate list,
+		// clear the SKID lookup
+		log.Warnf("clearing local KID lookup after %d failed attempts to load public key certificate list",
+			p.certLoadFailCounter)
+	} else {
+		// reset fail counter if certs were loaded successfully
+		p.certLoadFailCounter = 0
 	}
 
 	// clear the SKID lookup
@@ -317,6 +310,4 @@ func (p *Protocol) loadSKIDs() error {
 
 	skids, _ := json.Marshal(p.skidStore)
 	log.Infof("loaded %d matching certificates from server: %s", len(p.skidStore), skids)
-
-	return nil
 }
