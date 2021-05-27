@@ -76,18 +76,18 @@ func (c *ExtendedClient) RequestCertificateList(verify Verify) ([]Certificate, e
 
 	respBodyBytes, err := c.getWithCertPinning(c.CertificateServerURL)
 	if err != nil {
-		return nil, fmt.Errorf("retrieving public key certificate list failed: %v", err)
+		return nil, fmt.Errorf("unable to retrieve public key certificate list: %v", err)
 	}
 
 	respContent := strings.SplitN(string(respBodyBytes), "\n", 2)
 	if len(respContent) < 2 {
-		return nil, fmt.Errorf("unexpected response content")
+		return nil, fmt.Errorf("unexpected response content from public key certificate list server: missing newline")
 	}
 
 	// verify signature
 	pubKeyPEM, err := c.RequestCertificateListPublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve public key for certificate list verification: %v", err)
+		return nil, err
 	}
 
 	signature, err := base64.StdEncoding.DecodeString(respContent[0])
@@ -117,7 +117,7 @@ func (c *ExtendedClient) RequestCertificateList(verify Verify) ([]Certificate, e
 func (c *ExtendedClient) RequestCertificateListPublicKey() ([]byte, error) {
 	resp, err := c.getWithCertPinning(c.CertificateServerPubKeyURL)
 	if err != nil {
-		return nil, fmt.Errorf("retrieving public key for certificate list verification failed: %v", err)
+		return nil, fmt.Errorf("unable to retrieve public key for certificate list verification: %v", err)
 	}
 
 	return resp, nil
