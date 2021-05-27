@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -200,10 +201,15 @@ type VerifyConnection func(connectionState tls.ConnectionState) error
 
 func NewConnectionVerifier(fingerprint [32]byte) VerifyConnection {
 	return func(connectionState tls.ConnectionState) error {
-
 		// PeerCertificates are the parsed certificates sent by the peer, in the order in which they were sent.
 		// The first element is the leaf certificate that the connection is verified against.
-		serverCertFingerprint := sha256.Sum256(connectionState.PeerCertificates[0].Raw)
+
+		x509cert, err := x509.ParseCertificate(connectionState.PeerCertificates[0].Raw)
+		if err != nil {
+			return fmt.Errorf("parsing server x.509 certificate failed: %v", err)
+		}
+
+		serverCertFingerprint := sha256.Sum256(x509cert.RawSubjectPublicKeyInfo)
 
 		if !bytes.Equal(serverCertFingerprint[:], fingerprint[:]) {
 			return fmt.Errorf("pinned server TLS certificate mismatch")
