@@ -80,7 +80,7 @@ type Config struct {
 	secretBytes               []byte // the decoded key store secret
 }
 
-func (c *Config) Load(configDir string, filename string) error {
+func (c *Config) Load(configDir, filename string) error {
 	c.configDir = configDir
 
 	// assume that we want to load from env instead of config files, if
@@ -205,8 +205,6 @@ func (c *Config) setDefaultURLs() {
 		c.Env = PROD_STAGE
 	}
 
-	log.Infof("UBIRCH backend environment: %s", c.Env)
-
 	if c.KeyService == "" {
 		c.KeyService = fmt.Sprintf(defaultKeyURL, c.Env)
 	} else {
@@ -216,9 +214,14 @@ func (c *Config) setDefaultURLs() {
 	if c.IdentityService == "" {
 		c.IdentityService = fmt.Sprintf(defaultCsrURL, c.Env)
 	}
+
+	log.Infof("UBIRCH backend environment: %s", c.Env)
+	log.Debugf(" - Keys:           %s", c.KeyService)
+	log.Debugf(" - CSRs:           %s", c.IdentityService)
 }
 
 // loadIdentitiesFile loads identities from the identities JSON file.
+// Returns without error if file does not exist.
 func (c *Config) loadIdentitiesFile(identities *[]*Identity) error {
 	identitiesFile := filepath.Join(c.configDir, identitiesFileName)
 
