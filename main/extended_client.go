@@ -70,12 +70,15 @@ type Verify func(pubKeyPEM []byte, data []byte, signature []byte) (bool, error)
 func (c *ExtendedClient) RequestCertificateList(verify Verify) ([]Certificate, error) {
 	log.Debugf("requesting public key certificate list")
 
-	respBodyBytes, err := c.Get(c.CertificateServerURL)
+	resp, err := c.Get(c.CertificateServerURL)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve public key certificate list: %v", err)
 	}
+	if h.HttpFailed(resp.StatusCode) {
+		return nil, fmt.Errorf("GET request to %s failed with response: (%s) %s", c.CertificateServerURL, resp.StatusCode, string(resp.Content))
+	}
 
-	respContent := strings.SplitN(string(respBodyBytes), "\n", 2)
+	respContent := strings.SplitN(string(resp.Content), "\n", 2)
 	if len(respContent) < 2 {
 		return nil, fmt.Errorf("unexpected response content from public key certificate list server: missing newline")
 	}
@@ -115,31 +118,38 @@ func (c *ExtendedClient) RequestCertificateListPublicKey() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve public key for certificate list verification: %v", err)
 	}
+	if h.HttpFailed(resp.StatusCode) {
+		return nil, fmt.Errorf("GET request to %s failed with response: (%s) %s", c.CertificateServerPubKeyURL, resp.StatusCode, string(resp.Content))
+	}
 
-	return resp, nil
+	return resp.Content, nil
 }
 
-func (c *ExtendedClient) Get(url string) ([]byte, error) {
+func (c *ExtendedClient) Get(url string) (h.HTTPResponse, error) {
 	client, err := c.NewClientWithCertPinning(url)
 	if err != nil {
-		return nil, err
+		return h.HTTPResponse{}, err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return h.HTTPResponse{}, err
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return h.HTTPResponse{}, err
 	}
 	//noinspection GoUnhandledErrorResult
 	defer resp.Body.Close()
 
-	if h.HttpFailed(resp.StatusCode) {
-		respBodyBytes, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("response: (%s) %s", resp.Status, string(respBodyBytes))
+	respBodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return h.HTTPResponse{}, err
 	}
 
-	return ioutil.ReadAll(resp.Body)
+	return h.HTTPResponse{
+		StatusCode: resp.StatusCode,
+		Header:     resp.Header,
+		Content:    respBodyBytes,
+	}, nil
 }
