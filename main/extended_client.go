@@ -40,7 +40,7 @@ type ExtendedClient struct {
 
 func (c *ExtendedClient) SendToUbirchSigningService(uid uuid.UUID, auth string, upp []byte) (h.HTTPResponse, error) {
 	endpoint := path.Join(c.SigningServiceURL, uid.String(), "hash")
-	return clients.Post(endpoint, upp, UCCHeader(auth))
+	return c.Post(endpoint, upp, UCCHeader(auth))
 }
 
 func UCCHeader(auth string) map[string]string {
