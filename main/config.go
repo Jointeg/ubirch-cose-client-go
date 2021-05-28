@@ -35,8 +35,8 @@ const (
 
 	PROD_STAGE = "prod"
 
-	defaultKeyURL      = "https://identity.%s.ubirch.com/api/keyService/v1/pubkey"
-	defaultIdentityURL = "https://identity.%s.ubirch.com/api/certs/v1/csr/register"
+	defaultKeyURL = "https://identity.%s.ubirch.com/api/keyService/v1/pubkey"
+	defaultCsrURL = "https://identity.%s.ubirch.com/api/certs/v1/csr/register"
 	//defaultSigningServiceURL = "http://localhost:8080"
 
 	identitiesFileName = "identities.json"
@@ -214,7 +214,7 @@ func (c *Config) setDefaultURLs() {
 	}
 
 	if c.IdentityService == "" {
-		c.IdentityService = fmt.Sprintf(defaultIdentityURL, c.Env)
+		c.IdentityService = fmt.Sprintf(defaultCsrURL, c.Env)
 	}
 }
 
