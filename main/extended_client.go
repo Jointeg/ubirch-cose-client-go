@@ -36,9 +36,10 @@ type ExtendedClient struct {
 	CertificateServerPubKeyURL string
 }
 
-func (c *ExtendedClient) SendToUbirchSigningService(uid uuid.UUID, auth string, upp []byte) (h.HTTPResponse, error) {
+func (c *ExtendedClient) SendToUbirchSigningService(uid uuid.UUID, auth string, upp []byte) (*h.HTTPResponse, error) {
 	endpoint := path.Join(c.SigningServiceURL, uid.String(), "hash")
-	return c.Post(endpoint, upp, UCCHeader(auth))
+	header := UCCHeader(auth)
+	return c.Post(endpoint, upp, &header)
 }
 
 func UCCHeader(auth string) map[string]string {
