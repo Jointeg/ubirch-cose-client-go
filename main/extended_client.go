@@ -70,7 +70,7 @@ type Verify func(pubKeyPEM []byte, data []byte, signature []byte) (bool, error)
 func (c *ExtendedClient) RequestCertificateList(verify Verify) ([]Certificate, error) {
 	log.Debugf("requesting public key certificate list")
 
-	respBodyBytes, err := c.getWithPinnedCert(c.CertificateServerURL)
+	respBodyBytes, err := c.Get(c.CertificateServerURL)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve public key certificate list: %v", err)
 	}
@@ -111,7 +111,7 @@ func (c *ExtendedClient) RequestCertificateList(verify Verify) ([]Certificate, e
 }
 
 func (c *ExtendedClient) RequestCertificateListPublicKey() ([]byte, error) {
-	resp, err := c.getWithPinnedCert(c.CertificateServerPubKeyURL)
+	resp, err := c.Get(c.CertificateServerPubKeyURL)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve public key for certificate list verification: %v", err)
 	}
@@ -119,7 +119,7 @@ func (c *ExtendedClient) RequestCertificateListPublicKey() ([]byte, error) {
 	return resp, nil
 }
 
-func (c *ExtendedClient) getWithPinnedCert(url string) ([]byte, error) {
+func (c *ExtendedClient) Get(url string) ([]byte, error) {
 	client, err := c.NewClientWithCertPinning(url)
 	if err != nil {
 		return nil, err
