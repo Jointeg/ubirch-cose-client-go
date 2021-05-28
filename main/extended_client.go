@@ -18,13 +18,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/ubirch/ubirch-client-go/main/adapters/clients"
 	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/ubirch/ubirch-client-go/main/adapters/clients"
 
 	log "github.com/sirupsen/logrus"
 	h "github.com/ubirch/ubirch-client-go/main/adapters/httphelper"
