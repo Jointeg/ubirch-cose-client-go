@@ -18,8 +18,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"path"
 	"strings"
 	"time"
@@ -123,33 +121,4 @@ func (c *ExtendedClient) RequestCertificateListPublicKey() ([]byte, error) {
 	}
 
 	return resp.Content, nil
-}
-
-func (c *ExtendedClient) Get(url string) (h.HTTPResponse, error) {
-	client, err := c.NewClientWithCertPinning(url)
-	if err != nil {
-		return h.HTTPResponse{}, err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return h.HTTPResponse{}, err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return h.HTTPResponse{}, err
-	}
-	//noinspection GoUnhandledErrorResult
-	defer resp.Body.Close()
-
-	respBodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return h.HTTPResponse{}, err
-	}
-
-	return h.HTTPResponse{
-		StatusCode: resp.StatusCode,
-		Header:     resp.Header,
-		Content:    respBodyBytes,
-	}, nil
 }
